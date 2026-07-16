@@ -249,7 +249,12 @@ p_name = st.sidebar.text_input("Full Name:", "John Doe")
 p_id = st.sidebar.text_input("Patient ID / Record No:", "PT-88392")
 p_age = st.sidebar.number_input("Age:", min_value=1, max_value=120, value=45)
 p_gender = st.sidebar.selectbox("Gender:", ["Male", "Female", "Other"])
-p_dob = st.sidebar.date_input("Date of Birth:", datetime.date(1981, 6, 15))
+p_dob = st.sidebar.date_input(
+    "Date of Birth:",
+    value=datetime.date(1981, 6, 15),
+    min_value=datetime.date(1900, 1, 1),
+    max_value=datetime.date.today()
+)
 p_date = st.sidebar.date_input("Study/Analysis Date:", datetime.date.today())
 
 st.sidebar.markdown("---")
