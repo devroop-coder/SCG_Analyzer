@@ -9,6 +9,21 @@ import tempfile
 # Ensure parent directory of 'app' is in path for robust execution
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from PIL import Image
+import base64
+
+# Locate and load assets
+icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "SCG.png")
+logo_img = "❤️"
+img_base64 = None
+try:
+    if os.path.exists(icon_path):
+        logo_img = Image.open(icon_path)
+        with open(icon_path, "rb") as f:
+            img_base64 = base64.b64encode(f.read()).decode()
+except Exception:
+    pass
+
 # Import modular packages
 from app.processing.preprocessing import parse_csv_txt, preprocess_scg
 from app.processing.segmentation import segment_heartbeats
@@ -20,11 +35,12 @@ from app.reports.generator import create_pdf_report
 
 # Page layout configurations
 st.set_page_config(
-    page_title="AI-Based SCG Analysis Software",
-    page_icon="❤️",
+    page_title="SCG Analyzer",
+    page_icon=logo_img,
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 
 # Inject custom styling for a premium modern look
 st.markdown("""
@@ -41,21 +57,33 @@ st.markdown("""
     /* Custom Headers and Cards */
     .dashboard-header {
         background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
-        padding: 2rem;
+        padding: 1.5rem 2rem;
         border-radius: 12px;
         color: white;
         margin-bottom: 2rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .dashboard-logo {
+        height: 70px;
+        background-color: white;
+        padding: 6px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .dashboard-header h1 {
         color: white;
         margin: 0;
         font-weight: 800;
         font-size: 2.2rem;
+        line-height: 1.2;
     }
     .dashboard-header p {
         color: #E2E8F0;
-        margin: 0.5rem 0 0 0;
+        margin: 0.3rem 0 0 0;
         font-size: 1.1rem;
     }
     
@@ -205,19 +233,33 @@ if "processed_scg" not in st.session_state:
     st.session_state.processed_scg = None
 
 # Header Banner
-st.markdown("""
-<div class="dashboard-header">
-    <h1>❤️ AI-Based SCG Analysis Software</h1>
-    <p>Clinical Decision Support Tool for Seismocardiography Signal Analytics & Heartbeat Keypoint Prediction</p>
-</div>
-""", unsafe_allow_html=True)
+if img_base64:
+    header_html = f"""
+    <div class="dashboard-header">
+        <img src="data:image/png;base64,{img_base64}" class="dashboard-logo">
+        <div>
+            <h1>AI-Based SCG Analysis Software</h1>
+            <p>Clinical Decision Support Tool for Seismocardiography Signal Analytics & Heartbeat Keypoint Prediction</p>
+        </div>
+    </div>
+    """
+else:
+    header_html = """
+    <div class="dashboard-header">
+        <h1>AI-Based SCG Analysis Software</h1>
+        <p>Clinical Decision Support Tool for Seismocardiography Signal Analytics & Heartbeat Keypoint Prediction</p>
+    </div>
+    """
+st.markdown(header_html, unsafe_allow_html=True)
 
 # Check model availability
 models = load_models()
 models_available = all(models[k] is not None for k in ["im", "ao", "ac"])
 
 # Sidebar controls
-st.sidebar.header("🔬 Input Signal Configuration")
+if logo_img != "❤️":
+    st.sidebar.image(logo_img, use_container_width=True)
+st.sidebar.header("Input Signal Configuration")
 
 # Selection between Upload and Simulation
 data_source = st.sidebar.radio("Select Data Source:", ["Simulate Resting SCG Data (Recommended)", "Upload SCG Recording File"])
@@ -244,7 +286,7 @@ if data_source == "Upload SCG Recording File" and not uploaded_files:
     st.session_state.analysis_complete = False
 
 st.sidebar.markdown("---")
-st.sidebar.header("📋 Patient Information")
+st.sidebar.header("Patient Information")
 p_name = st.sidebar.text_input("Full Name:", "John Doe")
 p_id = st.sidebar.text_input("Patient ID / Record No:", "PT-88392")
 p_dob = st.sidebar.date_input(
@@ -263,7 +305,7 @@ p_gender = st.sidebar.selectbox("Gender:", ["Male", "Female", "Other"])
 p_date = st.sidebar.date_input("Study/Analysis Date:", datetime.date.today())
 
 st.sidebar.markdown("---")
-run_analysis_btn = st.sidebar.button("🚀 Run Analysis Pipeline", use_container_width=True)
+run_analysis_btn = st.sidebar.button("Run Analysis Pipeline", use_container_width=True)
 
 # Main Dashboard logic
 if run_analysis_btn:
@@ -416,16 +458,16 @@ if st.session_state.analysis_complete:
     
     # Model Warning banner
     if st.session_state.used_fallback:
-        st.warning("⚠️ XGBoost models (`xgb_im.pkl`, `xgb_ao.pkl`, `xgb_ac.pkl`) were not found in `app/ml/models/`. Detections have fallen back to physiological rule-based heuristic calculations.")
+        st.warning("XGBoost models (`xgb_im.pkl`, `xgb_ao.pkl`, `xgb_ac.pkl`) were not found in `app/ml/models/`. Detections have fallen back to physiological rule-based heuristic calculations.")
     else:
-        st.success("✅ Prediction running on trained XGBoost Machine Learning Models.")
+        st.success("Prediction running on trained XGBoost Machine Learning Models.")
 
     # Create tabs
     tab1, tab2, tab3, tab4 = st.tabs([
-        "📈 Signal Analytics", 
-        "💓 Cardiac Events & Intervals", 
-        "🧠 AI Explainability (SHAP)", 
-        "📄 Export Report"
+        "Signal Analytics", 
+        "Cardiac Events & Intervals", 
+        "AI Explainability (SHAP)", 
+        "Export Report"
     ])
     
     with tab1:
@@ -491,7 +533,7 @@ if st.session_state.analysis_complete:
         # Download intervals CSV button
         csv_data = intervals_df.to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="📥 Download Beat Intervals CSV",
+            label="Download Beat Intervals CSV",
             data=csv_data,
             file_name=f"{st.session_state.patient_data['id']}_beat_intervals.csv",
             mime="text/csv",
@@ -502,7 +544,7 @@ if st.session_state.analysis_complete:
         st.subheader("Model Interpretability & Feature Importances")
         
         if st.session_state.used_fallback:
-            st.info("💡 SHAP Explainability plots are unavailable because predictions are running in fallback mode (trained XGBoost model files are missing). Place model pkl files in `app/ml/models/` to unlock SHAP analysis.")
+            st.info("SHAP Explainability plots are unavailable because predictions are running in fallback mode (trained XGBoost model files are missing). Place model pkl files in `app/ml/models/` to unlock SHAP analysis.")
             
             # Render a dummy mock feature importance plot to demonstrate UI
             st.markdown("#### Sample Model Feature Importance (Demostration only)")
@@ -596,7 +638,7 @@ if st.session_state.analysis_complete:
                 pdf_bytes = f.read()
                 
             st.download_button(
-                label="📥 Generate & Download Diagnostic PDF Report",
+                label="Generate & Download Diagnostic PDF Report",
                 data=pdf_bytes,
                 file_name=f"SCG_Report_{st.session_state.patient_data['id']}.pdf",
                 mime="application/pdf",
@@ -604,4 +646,4 @@ if st.session_state.analysis_complete:
             )
 else:
     # Landing page message
-    st.info("👈 Please load a recording file or select 'Simulate' and click 'Run Analysis Pipeline' on the sidebar to inspect the signal, predict cardiac events, and compile PDF reports.")
+    st.info("Please load a recording file or select 'Simulate' and click 'Run Analysis Pipeline' on the sidebar to inspect the signal, predict cardiac events, and compile PDF reports.")
